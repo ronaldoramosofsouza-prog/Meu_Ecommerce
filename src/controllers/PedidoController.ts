@@ -103,6 +103,31 @@ export class PedidoController {
     }
   }
 
+  // GET /api/pedidos/:id — detalhe completo (cliente dono, restaurante dono, entregador do pedido, admin)
+  static async buscarPorId(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      const pedido = await PedidoRepository.buscarComItens(id);
+      if (!pedido) {
+        return res.status(404).json({ mensagem: 'Pedido não encontrado.' });
+      }
+
+      const ehAdmin = req.usuario?.role === 'ADMIN';
+      const ehClienteDono = pedido.usuario_id === req.usuario?.id;
+      const ehRestauranteDono = pedido.restaurante_usuario_id === req.usuario?.id;
+      const ehEntregadorDoPedido = pedido.entregador_usuario_id === req.usuario?.id;
+
+      if (!ehAdmin && !ehClienteDono && !ehRestauranteDono && !ehEntregadorDoPedido) {
+        return res.status(403).json({ mensagem: 'Você não tem permissão para ver este pedido.' });
+      }
+
+      return res.status(200).json(pedido);
+    } catch (error) {
+      console.error('Erro ao buscar pedido:', error);
+      return res.status(500).json({ mensagem: 'Erro ao buscar pedido.' });
+    }
+  }
+
   // GET /api/pedidos — lista pedidos (ADMIN: todos; RESTAURANTE: do seu restaurante)
   static async listarTodos(req: Request, res: Response): Promise<Response> {
     try {

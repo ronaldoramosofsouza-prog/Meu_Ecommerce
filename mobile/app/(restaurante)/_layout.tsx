@@ -1,6 +1,7 @@
 import { Redirect, Stack } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import BotaoSair from '../../src/components/BotaoSair';
 import { destinoPorRole } from '../../src/config/rotas';
 import { useAuth } from '../../src/context/AuthContext';
 
@@ -18,7 +19,7 @@ export default function LayoutRestaurante() {
   if (usuario.role !== 'RESTAURANTE') return <Redirect href={destinoPorRole(usuario.role)} />;
 
   return (
-    <Stack screenOptions={{ headerShown: true, headerTitleAlign: 'center' }}>
+    <Stack screenOptions={{ headerShown: true, headerTitleAlign: 'center', headerRight: () => <BotaoSair /> }}>
       <Stack.Screen name="dashboard" options={{ title: 'Pedidos' }} />
       <Stack.Screen name="cardapio" options={{ title: 'Cardápio' }} />
       <Stack.Screen name="perfil" options={{ title: 'Meu restaurante' }} />

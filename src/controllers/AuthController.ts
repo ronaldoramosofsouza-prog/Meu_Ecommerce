@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { UsuarioRepository, Role } from '../repositories/UsuarioRepository';
+import { EntregadorRepository } from '../repositories/EntregadorRepository';
 
 const ROLES_PERMITIDAS: Role[] = ['CLIENTE', 'ENTREGADOR', 'ADMIN', 'RESTAURANTE'];
 
@@ -77,6 +78,12 @@ export class AuthController {
         senha_hash: senhaHash,
         role: usuarioRole,
       });
+
+      // 3.1. Entregador precisa de um perfil próprio (status, veículo, GPS) para
+      // poder aceitar entregas — sem isso a vinculação a um pedido falha.
+      if (usuarioRole === 'ENTREGADOR' && novoUsuario.id) {
+        await EntregadorRepository.criarPerfil(novoUsuario.id);
+      }
 
       // 4. Geração do token JWT com o campo role incluído
       const token = jwt.sign(

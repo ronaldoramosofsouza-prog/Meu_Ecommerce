@@ -12,6 +12,9 @@ pedidoRoutes.get('/pedidos/meus-pedidos', authMiddleware, PedidoController.lista
 // Admin e restaurante (dono) visualizam os pedidos
 pedidoRoutes.get('/pedidos', authMiddleware, autorizarRole('ADMIN', 'RESTAURANTE'), PedidoController.listarTodos);
 
+// Detalhe completo (autorização por dono/entregador/admin é checada no controller)
+pedidoRoutes.get('/pedidos/:id', authMiddleware, PedidoController.buscarPorId);
+
 // Transições de status por papel (admin, restaurante dono, entregador do pedido)
 pedidoRoutes.patch(
   '/pedidos/:id/status',

@@ -110,6 +110,41 @@ export class PedidoRepository {
     return rows[0] ?? null;
   }
 
+  // Pedido completo com dados legíveis (cliente/restaurante/entregador) + itens,
+  // usado pela tela de detalhes do pedido (cliente, restaurante, entregador, admin).
+  static async buscarComItens(id: string): Promise<any | null> {
+    const { rows } = await db.query(
+      `SELECT p.id, p.usuario_id, p.entregador_id, p.restaurante_id, p.endereco_entrega,
+              p.valor_total, p.taxa_entrega, p.status, p.metodo_pagamento, p.criado_em, p.entregue_em,
+              u.nome AS cliente_nome, u.email AS cliente_email, u.telefone AS cliente_telefone,
+              r.nome AS restaurante_nome, r.endereco AS restaurante_endereco,
+              eu.nome AS entregador_nome, eu.id AS entregador_usuario_id,
+              r.usuario_id AS restaurante_usuario_id
+       FROM pedidos p
+       LEFT JOIN usuarios u ON u.id = p.usuario_id
+       LEFT JOIN restaurantes r ON r.id = p.restaurante_id
+       LEFT JOIN entregadores e ON e.id = p.entregador_id
+       LEFT JOIN usuarios eu ON eu.id = e.usuario_id
+       WHERE p.id = $1`,
+      [id]
+    );
+    const pedido = rows[0] ?? null;
+    if (!pedido) {
+      return null;
+    }
+
+    const itens = await db.query(
+      `SELECT ip.id, ip.produto_id, ip.quantidade, ip.preco_unitario, pr.nome AS produto_nome
+       FROM itens_pedido ip
+       LEFT JOIN produtos pr ON pr.id = ip.produto_id
+       WHERE ip.pedido_id = $1
+       ORDER BY pr.nome`,
+      [id]
+    );
+
+    return { ...pedido, itens: itens.rows };
+  }
+
   static async buscarTodos(): Promise<any[]> {
     const { rows } = await db.query(
       `SELECT p.id, p.usuario_id, p.entregador_id, p.restaurante_id, p.endereco_entrega,
@@ -211,9 +246,12 @@ export class PedidoRepository {
 
   static async atualizarStatus(id: string, status: StatusPedido, entregadorId?: string): Promise<Pedido | null> {
     const atualizado = await db.query(
-      `UPDATE pedidos SET status = $1 WHERE id = $2
+      `UPDATE pedidos
+       SET status = $1,
+           entregue_em = CASE WHEN $1::varchar = 'ENTREGUE' THEN CURRENT_TIMESTAMP ELSE entregue_em END
+       WHERE id = $2
        RETURNING id, usuario_id, restaurante_id, entregador_id, endereco_entrega,
-                 valor_total, status, metodo_pagamento, criado_em`,
+                 valor_total, taxa_entrega, status, metodo_pagamento, criado_em, entregue_em`,
       [status, id]
     );
     if (!atualizado.rows[0]) {

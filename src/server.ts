@@ -12,6 +12,7 @@ import { authRoutes } from './routes/auth.routes';
 import { produtoRoutes } from './routes/produto.routes';
 import { pedidoRoutes } from './routes/pedido.routes';
 import { restauranteRoutes } from './routes/restaurante.routes';
+import { entregadorRoutes } from './routes/entregador.routes';
 import { db } from './config/database';
 import { UsuarioPayload } from './middlewares/authMiddleware';
 import { PedidoRepository } from './repositories/PedidoRepository';
@@ -49,6 +50,7 @@ app.use('/api', authRoutes);
 app.use('/api', produtoRoutes);
 app.use('/api', pedidoRoutes);
 app.use('/api', restauranteRoutes);
+app.use('/api', entregadorRoutes);
 
 // Tratador global de erros — registrado DEPOIS das rotas: captura erros
 // síncronos e next(err) não tratados, respondendo sempre com { mensagem }.
