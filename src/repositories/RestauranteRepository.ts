@@ -2,21 +2,22 @@ import { pool } from '../config/database';
 import { Restaurante, RestauranteStatus } from '../models/Restaurante';
 
 const CAMPOS = `
-  id, usuario_id, nome, descricao, categoria, endereco, imagem_url,
+  id, usuario_id, nome, descricao, categoria, cnpj, endereco, imagem_url,
   status, lat, lng, criado_em
 `;
 
 export class RestauranteRepository {
   static async criar(dados: Partial<Restaurante> & { usuario_id: string; nome: string }): Promise<Restaurante> {
     const { rows } = await pool.query(
-      `INSERT INTO restaurantes (usuario_id, nome, descricao, categoria, endereco, imagem_url, lat, lng)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO restaurantes (usuario_id, nome, descricao, categoria, cnpj, endereco, imagem_url, lat, lng)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING ${CAMPOS}`,
       [
         dados.usuario_id,
         dados.nome,
         dados.descricao ?? null,
         dados.categoria ?? null,
+        dados.cnpj ?? null,
         dados.endereco ?? null,
         dados.imagem_url ?? null,
         dados.lat ?? null,
@@ -62,16 +63,18 @@ export class RestauranteRepository {
        SET nome = COALESCE($1, nome),
            descricao = COALESCE($2, descricao),
            categoria = COALESCE($3, categoria),
-           endereco = COALESCE($4, endereco),
-           imagem_url = COALESCE($5, imagem_url),
-           lat = COALESCE($6, lat),
-           lng = COALESCE($7, lng)
-       WHERE id = $8
+           cnpj = COALESCE($4, cnpj),
+           endereco = COALESCE($5, endereco),
+           imagem_url = COALESCE($6, imagem_url),
+           lat = COALESCE($7, lat),
+           lng = COALESCE($8, lng)
+       WHERE id = $9
        RETURNING ${CAMPOS}`,
       [
         dados.nome ?? null,
         dados.descricao ?? null,
         dados.categoria ?? null,
+        dados.cnpj ?? null,
         dados.endereco ?? null,
         dados.imagem_url ?? null,
         dados.lat ?? null,

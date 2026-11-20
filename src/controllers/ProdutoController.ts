@@ -19,6 +19,39 @@ export class ProdutoController {
     }
   }
 
+  // GET /api/produtos/meus — RESTAURANTE: todos os produtos do próprio
+  // restaurante, inclusive indisponíveis (para a tela de gerenciamento do
+  // cardápio, diferente da listagem pública que só mostra os disponíveis).
+  static async meusProdutos(req: Request, res: Response): Promise<Response> {
+    try {
+      const perfil = await RestauranteRepository.buscarPorUsuarioId(req.usuario!.id);
+      if (!perfil?.id) {
+        return res.status(403).json({ mensagem: 'Crie um perfil de restaurante para gerenciar produtos.' });
+      }
+      const produtos = await ProdutoRepository.buscarPorRestaurante(perfil.id);
+      return res.status(200).json(produtos);
+    } catch (error) {
+      console.error('Erro ao buscar meus produtos:', error);
+      return res.status(500).json({ mensagem: 'Erro interno ao buscar produtos.' });
+    }
+  }
+
+  // GET /api/produtos/:id — detalhe de um produto (para pré-preencher a edição)
+  static async buscarPorId(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      const produto = await ProdutoRepository.buscarPorId(id);
+      if (!produto) {
+        return res.status(404).json({ mensagem: 'Produto não encontrado.' });
+      }
+      const { restaurante_usuario_id, ...dados } = produto;
+      return res.status(200).json(dados);
+    } catch (error) {
+      console.error('Erro ao buscar produto:', error);
+      return res.status(500).json({ mensagem: 'Erro ao buscar produto.' });
+    }
+  }
+
   // POST /api/produtos — ADMIN ou RESTAURANTE (dono do seu restaurante)
   static async criar(req: Request, res: Response): Promise<Response> {
     try {
@@ -58,6 +91,49 @@ export class ProdutoController {
     } catch (error) {
       console.error('Erro ao cadastrar produto:', error);
       return res.status(500).json({ mensagem: 'Erro ao cadastrar produto.' });
+    }
+  }
+
+  // PATCH /api/produtos/:id — ADMIN ou RESTAURANTE dono: edita dados do produto
+  // (nome, descrição, preço, categoria, imagem, estoque) — diferente de
+  // /status, que só liga/desliga a disponibilidade.
+  static async atualizar(req: Request, res: Response): Promise<Response> {
+    try {
+      const { id } = req.params;
+      const { nome, descricao, preco, categoria, imagem_url, estoque } = req.body;
+
+      const produto = await ProdutoRepository.buscarPorId(id);
+      if (!produto) {
+        return res.status(404).json({ mensagem: 'Produto não encontrado.' });
+      }
+
+      const ehAdmin = req.usuario?.role === 'ADMIN';
+      const ehDono = req.usuario?.role === 'RESTAURANTE' && produto.restaurante_usuario_id === req.usuario?.id;
+      if (!ehAdmin && !ehDono) {
+        return res.status(403).json({ mensagem: 'Sem permissão para alterar este produto.' });
+      }
+
+      let precoNumerico: number | undefined;
+      if (preco !== undefined) {
+        precoNumerico = Number(preco);
+        if (Number.isNaN(precoNumerico) || precoNumerico <= 0) {
+          return res.status(400).json({ mensagem: 'Preço inválido.' });
+        }
+      }
+
+      const atualizado = await ProdutoRepository.atualizar(id, {
+        nome,
+        descricao,
+        preco: precoNumerico,
+        categoria,
+        imagem_url,
+        estoque,
+      });
+
+      return res.status(200).json(atualizado);
+    } catch (error) {
+      console.error('Erro ao atualizar produto:', error);
+      return res.status(500).json({ mensagem: 'Erro ao atualizar produto.' });
     }
   }
 

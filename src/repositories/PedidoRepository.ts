@@ -179,9 +179,12 @@ export class PedidoRepository {
 
   static async buscarPorUsuario(usuarioId: string): Promise<Pedido[]> {
     const { rows } = await db.query(
-      `SELECT id, usuario_id, restaurante_id, entregador_id, endereco_entrega,
-              valor_total, status, metodo_pagamento, criado_em
-       FROM pedidos WHERE usuario_id = $1 ORDER BY criado_em DESC`,
+      `SELECT p.id, p.usuario_id, p.restaurante_id, p.entregador_id, p.endereco_entrega,
+              p.valor_total, p.taxa_entrega, p.status, p.metodo_pagamento, p.criado_em, p.entregue_em,
+              r.nome AS restaurante_nome
+       FROM pedidos p
+       LEFT JOIN restaurantes r ON r.id = p.restaurante_id
+       WHERE p.usuario_id = $1 ORDER BY p.criado_em DESC`,
       [usuarioId]
     );
     return rows;

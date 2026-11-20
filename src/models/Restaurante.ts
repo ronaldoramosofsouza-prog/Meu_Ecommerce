@@ -6,6 +6,7 @@ export interface Restaurante {
   nome: string;
   descricao?: string;
   categoria?: string;
+  cnpj?: string;
   endereco?: string;
   imagem_url?: string;
   status: RestauranteStatus;

@@ -7,7 +7,7 @@ export class RestauranteController {
   static async cadastrar(req: Request, res: Response): Promise<Response> {
     try {
       const usuarioId = req.usuario?.id;
-      const { nome, descricao, categoria, endereco, imagem_url, lat, lng } = req.body;
+      const { nome, descricao, categoria, cnpj, endereco, imagem_url, lat, lng } = req.body;
 
       if (!usuarioId) {
         return res.status(401).json({ mensagem: 'Usuário não autenticado.' });
@@ -27,6 +27,7 @@ export class RestauranteController {
         nome,
         descricao,
         categoria,
+        cnpj,
         endereco,
         imagem_url,
         lat,
@@ -100,11 +101,12 @@ export class RestauranteController {
         return res.status(404).json({ mensagem: 'Perfil de restaurante não encontrado.' });
       }
 
-      const { nome, descricao, categoria, endereco, imagem_url, lat, lng } = req.body;
+      const { nome, descricao, categoria, cnpj, endereco, imagem_url, lat, lng } = req.body;
       const atualizado = await RestauranteRepository.atualizar(restaurante.id, {
         nome,
         descricao,
         categoria,
+        cnpj,
         endereco,
         imagem_url,
         lat,
